@@ -16,7 +16,7 @@ void printerr(const char *module_name, const char *errmsg, const char *filename)
 bool isdir(const char *filename);
 void show_file_entry(const char *filename);
 char *get_permissions(mode_t mode);
-void searchdir(const char *dirname, const char *filename, int depth, int *viewed_entries);
+void searchdir(const char *dirname, const char *filename, int depth, int *scanned_entries);
 
 char *module;
 
@@ -32,9 +32,9 @@ int main(int argc, char *argv[], char *envp[])
         return 1;
     }
 
-    int viewed_entries = 1;
-    searchdir(argv[1], argv[2], 1, &viewed_entries);
-    printf("\nViewed entries: %d\n", viewed_entries);
+    int scanned_entries = 1;
+    searchdir(argv[1], argv[2], 1, &scanned_entries);
+    printf("\nViewed entries: %d\n", scanned_entries);
 
     return 0;
 }
@@ -103,7 +103,7 @@ char *get_permissions(mode_t mode)
     return perms;
 }
 
-void searchdir(const char *dirname, const char *filename, int depth, int *viewed_entries)
+void searchdir(const char *dirname, const char *filename, int depth, int *scanned_entries)
 {
     char *bname = basename(filename);
 
@@ -118,14 +118,14 @@ void searchdir(const char *dirname, const char *filename, int depth, int *viewed
             continue;
         }
 
-        (*viewed_entries)++;
+        (*scanned_entries)++;
 
         if (depth && isdir(cdirent->d_name)) {
             char new_filename[PATH_MAX];
             strcpy(new_filename, cdirent->d_name);
             strcat(new_filename, "/");
             strcat(new_filename, filename);
-            searchdir(cdirent->d_name, new_filename, depth - 1, viewed_entries);
+            searchdir(cdirent->d_name, new_filename, depth - 1, scanned_entries);
         } else if (!strcmp(cdirent->d_name, bname)) {
             show_file_entry(filename);
         }
