@@ -13,10 +13,10 @@
 #define PERM_BITS_NUM 9
 
 void printerr(const char *module_name, const char *errmsg, const char *filename);
-bool isdir(const char *filename);
-void show_file_entry(const char *filename);
+bool isdir(const char *path);
+void show_file_entry(const char *filepath);
 char *get_permissions(mode_t mode);
-void searchdir(const char *dirname, const char *filename, int depth, int *scanned_entries);
+void searchdir(const char *dirpath, const char *filename, int depth, int *scanned_entries);
 
 char *module;
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[], char *envp[])
 
     int scanned_entries = 1;
     searchdir(argv[1], argv[2], 1, &scanned_entries);
-    printf("\nScanned entries: %d\n", scanned_entries);
+    printf("Scanned entries: %d\n", scanned_entries);
 
     return 0;
 }
@@ -44,30 +44,30 @@ void printerr(const char *module, const char *errmsg, const char *filename)
     fprintf(stderr, "%s: %s %s\n", module, errmsg, filename ? filename : "");
 }
 
-bool isdir(const char *filename)
+bool isdir(const char *path)
 {
     struct stat statbuf;
 
-    if (stat(filename, &statbuf) == -1) {
-        printerr(module, strerror(errno), filename);
+    if (stat(path, &statbuf) == -1) {
+        printerr(module, strerror(errno), path);
         return false;
     }
 
     return S_ISDIR(statbuf.st_mode);
 }
 
-void show_file_entry(const char *filename)
+void show_file_entry(const char *filepath)
 {
     struct stat statbuf;
-    if (stat(filename, &statbuf) == -1) {
-        printerr(module, strerror(errno), filename);
+    if (stat(filepath, &statbuf) == -1) {
+        printerr(module, strerror(errno), filepath);
         return;
     }
 
     char *actualpath;
-    actualpath = realpath(filename, NULL);
+    actualpath = realpath(filepath, NULL);
     if (!actualpath) {
-        printerr(module, strerror(errno), filename);
+        printerr(module, strerror(errno), filepath);
         return;
     }
 
@@ -79,6 +79,7 @@ void show_file_entry(const char *filename)
     printf("\tLast file modification: %s", ctime(&statbuf.st_ctime));
     printf("\tPermissions: %s\n", perms);
     printf("\tI-node number: %ld\n", (long) statbuf.st_ino);
+    printf("\n");
 
     free(actualpath);
     free(perms);
@@ -103,13 +104,17 @@ char *get_permissions(mode_t mode)
     return perms;
 }
 
-void searchdir(const char *dirname, const char *filename, int depth, int *scanned_entries)
+void searchdir(const char *dirpath, const char *filename, int depth, int *scanned_entries)
 {
     char *bname = basename(filename);
+    char filepath[PATH_MAX];
+    strcpy(filepath, dirpath);
+    strcat(filepath, "/");
+    strcat(filepath, filename);
 
     DIR *currdir;
-    if (!(currdir = opendir(dirname))) {
-        printerr(module, strerror(errno), dirname);
+    if (!(currdir = opendir(dirpath))) {
+        printerr(module, strerror(errno), dirpath);
     }
 
     struct dirent *cdirent;
@@ -120,14 +125,14 @@ void searchdir(const char *dirname, const char *filename, int depth, int *scanne
 
         (*scanned_entries)++;
 
-        if (depth && isdir(cdirent->d_name)) {
-            char new_filename[PATH_MAX];
-            strcpy(new_filename, cdirent->d_name);
-            strcat(new_filename, "/");
-            strcat(new_filename, filename);
-            searchdir(cdirent->d_name, new_filename, depth - 1, scanned_entries);
+        char new_dirpath[PATH_MAX];
+        strcpy(new_dirpath, dirpath);
+        strcat(new_dirpath, "/");
+        strcat(new_dirpath, cdirent->d_name);
+        if (depth && isdir(new_dirpath)) {
+            searchdir(new_dirpath, filename, depth - 1, scanned_entries);
         } else if (!strcmp(cdirent->d_name, bname)) {
-            show_file_entry(filename);
+            show_file_entry(filepath);
         }
     }
 
