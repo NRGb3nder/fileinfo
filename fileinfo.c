@@ -25,7 +25,7 @@ int main(int argc, char *argv[], char *envp[])
     module = basename(argv[0]);
 
     if (argc < VALID_ARGC) {
-        printerr(module, "Missing argument", NULL);
+        printerr(module, "Too few arguments", NULL);
         return 1;
     }
     if (!isdir(argv[1])) {
@@ -34,7 +34,7 @@ int main(int argc, char *argv[], char *envp[])
 
     int scanned_entries = 1;
     searchdir(argv[1], argv[2], 1, &scanned_entries);
-    printf("\nViewed entries: %d\n", scanned_entries);
+    printf("\nScanned entries: %d\n", scanned_entries);
 
     return 0;
 }
