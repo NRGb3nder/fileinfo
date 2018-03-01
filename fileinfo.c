@@ -15,7 +15,7 @@
 void printerr(const char *module_name, const char *errmsg, const char *filename);
 bool isdir(const char *path);
 void show_file_entry(const char *filepath);
-char *get_permissions(mode_t mode);
+void write_permissions_to_buf(mode_t mode, char *buf);
 void searchdir(const char *dirpath, const char *filename, int depth, int *scanned_entries);
 
 char *module;
@@ -64,15 +64,14 @@ void show_file_entry(const char *filepath)
         return;
     }
 
-    char *actualpath;
-    actualpath = realpath(filepath, NULL);
-    if (!actualpath) {
+    char actualpath[PATH_MAX];
+    if (!realpath(filepath, actualpath)) {
         printerr(module, strerror(errno), filepath);
         return;
     }
 
-    char *perms;
-    perms = get_permissions(statbuf.st_mode);
+    char perms[PERM_BITS_NUM + 1];
+    write_permissions_to_buf(statbuf.st_mode, perms);
 
     printf("For %s:\n",  actualpath);
     printf("\tFile size: %lld bytes\n", (long long) statbuf.st_size);
@@ -80,28 +79,20 @@ void show_file_entry(const char *filepath)
     printf("\tPermissions: %s\n", perms);
     printf("\tI-node number: %ld\n", (long) statbuf.st_ino);
     printf("\n");
-
-    free(actualpath);
-    free(perms);
 }
 
-char *get_permissions(mode_t mode)
+void write_permissions_to_buf(mode_t mode, char *buf)
 {
-    char *perms;
-    perms = (char *) malloc(sizeof(char) * (PERM_BITS_NUM + 1));
-
-    perms[0] = mode & S_IRUSR ? 'r' : '-';
-    perms[1] = mode & S_IWUSR ? 'w' : '-';
-    perms[2] = mode & S_IXUSR ? 'x' : '-';
-    perms[3] = mode & S_IRGRP ? 'r' : '-';
-    perms[4] = mode & S_IWGRP ? 'w' : '-';
-    perms[5] = mode & S_IXGRP ? 'x' : '-';
-    perms[6] = mode & S_IROTH ? 'r' : '-';
-    perms[7] = mode & S_IWOTH ? 'w' : '-';
-    perms[8] = mode & S_IXOTH ? 'x' : '-';
-    perms[9] = '\0';
-
-    return perms;
+    buf[0] = mode & S_IRUSR ? 'r' : '-';
+    buf[1] = mode & S_IWUSR ? 'w' : '-';
+    buf[2] = mode & S_IXUSR ? 'x' : '-';
+    buf[3] = mode & S_IRGRP ? 'r' : '-';
+    buf[4] = mode & S_IWGRP ? 'w' : '-';
+    buf[5] = mode & S_IXGRP ? 'x' : '-';
+    buf[6] = mode & S_IROTH ? 'r' : '-';
+    buf[7] = mode & S_IWOTH ? 'w' : '-';
+    buf[8] = mode & S_IXOTH ? 'x' : '-';
+    buf[9] = '\0';
 }
 
 void searchdir(const char *dirpath, const char *filename, int depth, int *scanned_entries)
