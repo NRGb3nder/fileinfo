@@ -49,7 +49,7 @@ bool isdir(const char *path)
 {
     struct stat statbuf;
 
-    if (stat(path, &statbuf) == -1) {
+    if (lstat(path, &statbuf) == -1) {
         printerr(module, strerror(errno), path);
         return false;
     }
