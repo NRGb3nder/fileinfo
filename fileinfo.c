@@ -107,6 +107,7 @@ void searchdir(const char *dirpath, const char *filename, int depth, int *scanne
     DIR *currdir;
     if (!(currdir = opendir(dirpath))) {
         printerr(module, strerror(errno), dirpath);
+        return;
     }
 
     struct dirent *cdirent;
