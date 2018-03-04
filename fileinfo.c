@@ -29,6 +29,7 @@ int main(int argc, char *argv[], char *envp[])
         return 1;
     }
     if (!isdir(argv[1])) {
+        printerr(module, "Not a directory", NULL);
         return 1;
     }
 
